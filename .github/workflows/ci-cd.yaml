@@ -47,11 +47,18 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            kubectl apply -f /home/ubuntu/k8s/namespace.yaml
-            kubectl apply -f /home/ubuntu/k8s/secrets.yaml
-            kubectl apply -f /home/ubuntu/k8s/postgres-deploy.yaml
-            kubectl apply -f /home/ubuntu/k8s/backend-deploy.yaml
-            kubectl apply -f /home/ubuntu/k8s/frontend-deploy.yaml
+              kubectl delete namespace tvapp --ignore-not-found
+              kubectl create namespace tvapp
 
-            kubectl get pods -n myapp
+              # Wait for namespace to be active
+              kubectl wait --for=condition=Active namespace/tvapp --timeout=30s
+
+              # Apply manifests in proper order
+              kubectl apply -f /home/ubuntu/k8s/secrets.yaml
+              kubectl apply -f /home/ubuntu/k8s/postgres-deploy.yaml
+              kubectl apply -f /home/ubuntu/k8s/backend-deploy.yaml
+              kubectl apply -f /home/ubuntu/k8s/frontend-deploy.yaml
+
+              # Optional: Verify deployment
+              kubectl get all -n tvapp
 
