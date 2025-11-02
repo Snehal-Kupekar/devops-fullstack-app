@@ -47,6 +47,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            kubectl apply -f /home/ubuntu/k8s/namespace.yaml
             kubectl delete -f /home/ubuntu/k8s --ignore-not-found
             kubectl apply -f /home/ubuntu/k8s
             kubectl get pods -n myapp
