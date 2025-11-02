@@ -15,18 +15,24 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:17
+          image: postgres:15-alpine
           ports:
             - containerPort: 5432
-          envFrom:
-            - secretRef:
-                name: postgres-secret
+          env:
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: postgres
+            - name: POSTGRES_DB
+              value: mydb
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata   
           volumeMounts:
             - name: postgres-storage
               mountPath: /var/lib/postgresql/data
       volumes:
         - name: postgres-storage
-          emptyDir: {}  # Use PersistentVolumeClaim in production
+          emptyDir: {}   
 ---
 apiVersion: v1
 kind: Service
@@ -34,9 +40,11 @@ metadata:
   name: postgres
   namespace: tvapp
 spec:
-  type: ClusterIP
   selector:
     app: postgres
   ports:
-    - port: 5432
+    - name: postgres
+      protocol: TCP
+      port: 5432
       targetPort: 5432
+  type: ClusterIP
