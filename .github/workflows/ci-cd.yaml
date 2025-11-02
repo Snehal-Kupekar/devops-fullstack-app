@@ -48,7 +48,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             kubectl apply -f /home/ubuntu/k8s/namespace.yaml
-            kubectl delete -f /home/ubuntu/k8s --ignore-not-found
-            kubectl apply -f /home/ubuntu/k8s
+            kubectl apply -f /home/ubuntu/k8s/secrets.yaml
+            kubectl apply -f /home/ubuntu/k8s/postgres-deploy.yaml
+            kubectl apply -f /home/ubuntu/k8s/backend-deploy.yaml
+            kubectl apply -f /home/ubuntu/k8s/frontend-deploy.yaml
+
             kubectl get pods -n myapp
 
