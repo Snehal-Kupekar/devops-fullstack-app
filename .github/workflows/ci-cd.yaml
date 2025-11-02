@@ -30,7 +30,16 @@ jobs:
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/app-frontend:latest frontend
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/app-frontend:latest
-
+      
+      - name: Copy Kubernetes manifests to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "./k8s/*"
+          target: "/home/ubuntu/k8s/"
+      
       - name: Deploy to Kind on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -38,6 +47,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            kubectl delete -f k8s --ignore-not-found
-            kubectl apply -f k8s
+            kubectl delete -f /home/ubuntu/k8s --ignore-not-found
+            kubectl apply -f /home/ubuntu/k8s
             kubectl get pods -n myapp
+
