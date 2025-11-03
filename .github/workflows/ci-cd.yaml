@@ -38,7 +38,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "./k8s/*"
-          target: "/home/ubuntu/k8s/"
+          target: "/home/ubuntu/"
       
       - name: Deploy to Kind on EC2
         uses: appleboy/ssh-action@v1.2.0
