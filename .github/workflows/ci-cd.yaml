@@ -28,7 +28,15 @@ jobs:
 
       - name: Build and push frontend image
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/app-frontend:latest frontend
+          BACKEND_URL="http://${{ secrets.EC2_PUBLIC_IP }}:30081"
+
+          echo "Building frontend with backend URL: $BACKEND_URL"
+
+          docker build \
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/app-frontend:latest \
+            --build-arg REACT_APP_SERVER_URL=$BACKEND_URL \
+            frontend
+
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/app-frontend:latest
       
       - name: Copy Kubernetes manifests to EC2
