@@ -1,26 +1,32 @@
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
   profile = "terraform"
 }
-
 
 resource "aws_security_group" "sg" {
   name        = "kind-sg"
   description = "Allow SSH and app access"
 
   ingress {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-   ingress {
-      from_port   = 30080
-      to_port     = 30080
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
+  ingress {
+    from_port   = 30080
+    to_port     = 30080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 30081
+    to_port     = 30081
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     description = "Allow all outbound traffic"
@@ -29,50 +35,63 @@ resource "aws_security_group" "sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
 }
 
 resource "aws_instance" "kind_ec2" {
-  ami                    = "ami-0ecb62995f68bb549" # Ubuntu 
+  ami                    = "ami-0ecb62995f68bb549" # Ubuntu 22.04 LTS
   instance_type          = "t3.medium"
   key_name               = "terraformKeypair"
   vpc_security_group_ids = [aws_security_group.sg.id]
 
   user_data = <<-EOF
     #!/bin/bash
+    set -e
+
     apt-get update -y
     apt-get install -y docker.io curl
+
     systemctl enable docker
     systemctl start docker
 
-    # install kind
+    # Install kind
     curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
     chmod +x ./kind
     mv ./kind /usr/local/bin/kind
 
-    # install kubectl
+    # Install kubectl
     curl -LO "https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl"
     chmod +x kubectl
-    mv kubectl /usr/local/bin/
+    mv kubectl /usr/local/bin/kubectl
 
-    # create kind cluster
-    cat <<EOC > kind-config.yaml
+    # Create kind-cluster.yaml
+    cat <<EOC > /root/kind-cluster.yaml
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
     nodes:
-    - role: control-plane
-      extraPortMappings:
-      - containerPort: 30080
-        hostPort: 30080
+      - role: control-plane
+        extraPortMappings:
+          - containerPort: 30080
+            hostPort: 30080
+            protocol: TCP
+          - containerPort: 30081
+            hostPort: 30081
+            protocol: TCP
     EOC
 
-    kind create cluster --config kind-config.yaml
-    echo "Kind cluster created"
+    # Create the Kind cluster
+    kind create cluster --config /root/kind-cluster.yaml
+
+    # Export kubeconfig
+    mkdir -p /root/.kube
+    kind get kubeconfig --name kind > /root/.kube/config
+    chmod 600 /root/.kube/config
+
+    echo "Kind cluster setup completed successfully"
   EOF
 
   tags = {
-    Name = "Kind-EC2"
-    CreatedBy="snehal"
+    Name       = "Kind-EC2"
+    CreatedBy  = "snehal"
   }
 }
 
