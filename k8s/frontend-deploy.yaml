@@ -19,7 +19,7 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: REACT_APP_API_URL
+        - name: REACT_APP_SERVER_URL
           value: "http://54.86.18.40:30081"
           # hostPort: 80 
 ---
